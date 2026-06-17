@@ -23,6 +23,10 @@
 # misc
 .DS_Store
 *.pem
+tmp-compare/
+tmp-frames/
+.playwright-browsers/
+tmp-*.svg
 
 # debug
 npm-debug.log*
