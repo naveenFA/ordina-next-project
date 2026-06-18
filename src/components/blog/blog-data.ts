@@ -93,6 +93,9 @@ export const BLOG_FEED: BlogFeedPost[] = [
     slug: HOME_BLOG.featured.slug,
     title: HOME_BLOG.featured.title,
     excerpt: HOME_BLOG.featured.excerpt,
+    category: HOME_BLOG.featured.category,
+    date: HOME_BLOG.featured.date,
+    readTime: HOME_BLOG.featured.readTime,
     image: HOME_ASSETS[HOME_BLOG.featured.imageKey as keyof typeof HOME_ASSETS],
   },
 ];

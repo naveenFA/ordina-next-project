@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { HOME_ASSETS, HOME_BLOG } from "@/data/homepage";
-import { BlogFeaturedCard } from "@/components/blog/blog-cards";
-import { BLOG_CATEGORIES, BLOG_FEED } from "@/components/blog/blog-data";
+import { BlogFeaturedCard, type BlogCardPost } from "@/components/blog/blog-cards";
 import { BlogFeed } from "@/components/blog/blog-feed";
 import { FaqSection } from "@/components/sections/faq-section";
+import { getBlogs } from "@/lib/cms";
 
 export const metadata: Metadata = {
   title: "Blog",
@@ -11,7 +11,33 @@ export const metadata: Metadata = {
     "Insights on building clearer workflows for modern teams — coordination strategies and practical systems for alignment.",
 };
 
-export default function BlogPage() {
+// Bundled fallback used only if the CMS is unreachable.
+const FALLBACK_FEED: BlogCardPost[] = HOME_BLOG.posts.map((post) => ({
+  slug: post.slug,
+  title: post.title,
+  excerpt: post.excerpt,
+  category: post.category,
+  date: post.date,
+  readTime: post.readTime,
+  image: HOME_ASSETS[post.imageKey as keyof typeof HOME_ASSETS],
+}));
+
+export default async function BlogPage() {
+  const { featured, feed, categories } = await getBlogs();
+
+  // Fall back to bundled content if the CMS is unreachable.
+  const feedPosts = feed.length ? feed : FALLBACK_FEED;
+  const feedCategories = categories.length
+    ? categories
+    : [...new Set(FALLBACK_FEED.map((post) => post.category).filter(Boolean))] as string[];
+  const featuredPost: BlogCardPost =
+    featured ?? {
+      slug: HOME_BLOG.featured.slug,
+      title: HOME_BLOG.featured.title,
+      excerpt: HOME_BLOG.featured.excerpt,
+      image: HOME_ASSETS[HOME_BLOG.featured.imageKey as keyof typeof HOME_ASSETS],
+    };
+
   return (
     <div className="text-[var(--ordina-text)]">
       <section className="bg-[var(--ordina-navy-deep)] pb-12 pt-16 text-white md:pb-14 md:pt-24">
@@ -31,10 +57,10 @@ export default function BlogPage() {
           </p>
 
           <BlogFeaturedCard
-            slug={HOME_BLOG.featured.slug}
-            title={HOME_BLOG.featured.title}
-            excerpt={HOME_BLOG.featured.excerpt}
-            image={HOME_ASSETS[HOME_BLOG.featured.imageKey as keyof typeof HOME_ASSETS]}
+            slug={featuredPost.slug}
+            title={featuredPost.title}
+            excerpt={featuredPost.excerpt}
+            image={featuredPost.image}
           />
         </div>
       </section>
@@ -42,8 +68,8 @@ export default function BlogPage() {
       <section className="bg-white py-10 md:py-14">
         <div className="mx-auto max-w-6xl px-6">
           <BlogFeed
-            posts={BLOG_FEED}
-            categories={BLOG_CATEGORIES}
+            posts={feedPosts}
+            categories={feedCategories}
             theme="light"
             grayscaleCards
           />

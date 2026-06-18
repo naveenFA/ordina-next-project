@@ -19,7 +19,7 @@ import { useInView } from "@/lib/use-in-view";
 import { HeroLogoTicker } from "@/components/sections/hero-logo-ticker";
 import { TestimonialsSection } from "@/components/sections/testimonials-section";
 import { FaqSection } from "@/components/sections/faq-section";
-import { BlogFeaturedCard, BlogPostCard } from "@/components/blog/blog-cards";
+import { BlogFeaturedCard, BlogPostCard, type BlogCardPost } from "@/components/blog/blog-cards";
 
 function asset(key: keyof typeof HOME_ASSETS) {
   return HOME_ASSETS[key];
@@ -412,11 +412,36 @@ function IntegrationTicker({
   );
 }
 
-export function HomePageContent() {
+export function HomePageContent({
+  blogFeatured = null,
+  blogPosts = [],
+}: {
+  blogFeatured?: BlogCardPost | null;
+  blogPosts?: BlogCardPost[];
+} = {}) {
   const [workflowIndex, setWorkflowIndex] = useState(0);
   const { ref: workflowRef, visible: workflowVisible } = useInView(0.3);
   const { ref: painIntroRef, visible: painIntroVisible } = useInView(0.4);
   const { ref: painCardsRef, visible: painCardsVisible } = useInView(0.4);
+
+  // Blog cards come from the CMS; fall back to bundled content if unavailable.
+  const blogFeaturedPost: BlogCardPost = blogFeatured ?? {
+    slug: HOME_BLOG.featured.slug,
+    title: HOME_BLOG.featured.title,
+    excerpt: HOME_BLOG.featured.excerpt,
+    image: asset(HOME_BLOG.featured.imageKey as keyof typeof HOME_ASSETS),
+  };
+  const blogCardPosts: BlogCardPost[] = blogPosts.length
+    ? blogPosts
+    : HOME_BLOG.posts.map((post) => ({
+        slug: post.slug,
+        title: post.title,
+        excerpt: post.excerpt,
+        category: post.category,
+        date: post.date,
+        readTime: post.readTime,
+        image: asset(post.imageKey as keyof typeof HOME_ASSETS),
+      }));
 
   // Auto-advance the workflow carousel (only while it's in view), matching Framer's progress carousel
   useEffect(() => {
@@ -880,26 +905,14 @@ export function HomePageContent() {
           </h2>
           <p className="mt-4 max-w-2xl text-lg text-white/70">{HOME_BLOG.description}</p>
           <BlogFeaturedCard
-            slug={HOME_BLOG.featured.slug}
-            title={HOME_BLOG.featured.title}
-            excerpt={HOME_BLOG.featured.excerpt}
-            image={asset(HOME_BLOG.featured.imageKey as keyof typeof HOME_ASSETS)}
+            slug={blogFeaturedPost.slug}
+            title={blogFeaturedPost.title}
+            excerpt={blogFeaturedPost.excerpt}
+            image={blogFeaturedPost.image}
           />
           <div className="mt-12 grid gap-6 md:mt-16 md:grid-cols-3">
-            {HOME_BLOG.posts.map((post) => (
-              <BlogPostCard
-                key={post.slug}
-                grayscale
-                post={{
-                  slug: post.slug,
-                  title: post.title,
-                  excerpt: post.excerpt,
-                  category: post.category,
-                  date: post.date,
-                  readTime: post.readTime,
-                  image: asset(post.imageKey as keyof typeof HOME_ASSETS),
-                }}
-              />
+            {blogCardPosts.map((post) => (
+              <BlogPostCard key={post.slug} grayscale post={post} />
             ))}
           </div>
         </div>
