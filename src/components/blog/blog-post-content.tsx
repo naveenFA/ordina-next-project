@@ -4,8 +4,10 @@ import { useEffect, useMemo, useState } from "react";
 
 export type BlogArticleSection = {
   heading: string;
-  paragraphs: string[];
-  bullets: string[];
+  paragraphs?: string[];
+  bullets?: string[];
+  /** Pre-rendered HTML body (from the CMS); takes precedence over paragraphs/bullets. */
+  html?: string;
 };
 
 function slugify(text: string) {
@@ -16,11 +18,13 @@ function slugify(text: string) {
 }
 
 export function BlogPostContent({
-  introParagraphs,
+  introParagraphs = [],
+  introHtml,
   sections,
   isCompactPost,
 }: {
-  introParagraphs: string[];
+  introParagraphs?: string[];
+  introHtml?: string;
   sections: BlogArticleSection[];
   isCompactPost: boolean;
 }) {
@@ -150,37 +154,51 @@ export function BlogPostContent({
         </aside>
 
         <div>
-          {introParagraphs.map((paragraph) => (
-            <p
-              key={paragraph.slice(0, 48)}
-              className="mb-5 max-w-3xl text-[15px] leading-[1.4] text-[#8c8c8c] md:text-base"
-            >
-              {paragraph}
-            </p>
-          ))}
+          {introHtml ? (
+            <div
+              className="blog-prose max-w-3xl"
+              dangerouslySetInnerHTML={{ __html: introHtml }}
+            />
+          ) : (
+            introParagraphs.map((paragraph) => (
+              <p
+                key={paragraph.slice(0, 48)}
+                className="mb-5 max-w-3xl text-[15px] leading-[1.4] text-[#8c8c8c] md:text-base"
+              >
+                {paragraph}
+              </p>
+            ))
+          )}
 
           {sectionItems.map((section) => (
             <section key={section.id} id={section.id} className="mt-10 scroll-mt-24">
               <h2 className="text-2xl font-medium leading-[1.2] tracking-[-0.02em] text-[var(--ordina-navy-deep)]">
                 {section.heading}
               </h2>
-              <div className="mt-4 space-y-4">
-                {section.paragraphs.map((paragraph) => (
-                  <p
-                    key={paragraph.slice(0, 64)}
-                    className="max-w-3xl text-[15px] leading-[1.4] text-[#8c8c8c] md:text-base"
-                  >
-                    {paragraph}
-                  </p>
-                ))}
-                {section.bullets.length > 0 ? (
-                  <ul className="ml-5 list-disc space-y-2 text-[15px] leading-[1.4] text-[#8c8c8c] md:text-base">
-                    {section.bullets.map((bullet, i) => (
-                      <li key={`${section.id}-bullet-${i}`}>{bullet}</li>
-                    ))}
-                  </ul>
-                ) : null}
-              </div>
+              {section.html ? (
+                <div
+                  className="blog-prose mt-4 max-w-3xl"
+                  dangerouslySetInnerHTML={{ __html: section.html }}
+                />
+              ) : (
+                <div className="mt-4 space-y-4">
+                  {(section.paragraphs ?? []).map((paragraph) => (
+                    <p
+                      key={paragraph.slice(0, 64)}
+                      className="max-w-3xl text-[15px] leading-[1.4] text-[#8c8c8c] md:text-base"
+                    >
+                      {paragraph}
+                    </p>
+                  ))}
+                  {(section.bullets ?? []).length > 0 ? (
+                    <ul className="ml-5 list-disc space-y-2 text-[15px] leading-[1.4] text-[#8c8c8c] md:text-base">
+                      {(section.bullets ?? []).map((bullet, i) => (
+                        <li key={`${section.id}-bullet-${i}`}>{bullet}</li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </div>
+              )}
             </section>
           ))}
         </div>

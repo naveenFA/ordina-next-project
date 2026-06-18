@@ -20,8 +20,10 @@ export const NAV_LINKS = [
 ] as const;
 
 export const FOOTER_LINKS = [
-  { href: "/legal/privacy-policy", label: "Privacy Policy" },
   { href: "/legal/terms-of-service", label: "Terms of Service" },
+  { href: "/legal/privacy-policy", label: "Privacy Policy" },
+  { href: "/legal/cookie-policy", label: "Cookie Policy" },
+  { href: "/legal/data-protection", label: "Data Protection" },
 ] as const;
 
 const pagesByPath = new Map<string, PageRecord>(

@@ -131,3 +131,62 @@ details > summary::-webkit-details-marker {
 nextjs-portal {
   display: none !important;
 }
+
+/* Prose styling for CMS-rendered blog article HTML (matches the article body look). */
+.blog-prose {
+  color: #8c8c8c;
+}
+.blog-prose p {
+  font-size: 15px;
+  line-height: 1.4;
+  margin-bottom: 1rem;
+}
+.blog-prose h2,
+.blog-prose h3,
+.blog-prose h4 {
+  color: var(--ordina-navy-deep);
+  font-weight: 500;
+  font-size: 1.25rem;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+.blog-prose ul,
+.blog-prose ol {
+  margin: 0.5rem 0 1rem 1.25rem;
+  list-style: disc;
+}
+.blog-prose ol {
+  list-style: decimal;
+}
+.blog-prose li {
+  font-size: 15px;
+  line-height: 1.4;
+  margin-bottom: 0.35rem;
+}
+.blog-prose strong {
+  color: #4a4a4a;
+  font-weight: 600;
+}
+.blog-prose a {
+  color: var(--ordina-navy-deep);
+  text-decoration: underline;
+}
+.blog-prose img {
+  margin: 1rem 0;
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.75rem;
+}
+.blog-prose h2:empty,
+.blog-prose h3:empty,
+.blog-prose h4:empty {
+  display: none;
+}
+@media (min-width: 768px) {
+  .blog-prose p,
+  .blog-prose li {
+    font-size: 1rem;
+  }
+}
