@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
-import { PageHero } from "@/components/ui";
+import Link from "next/link";
+import { HOME_ASSETS, HOME_HERO_LOGOS, SITE_FOOTER } from "@/data/homepage";
+import { FaqSection } from "@/components/sections/faq-section";
+import { SocialIcon } from "@/components/site-shell";
 
 export const metadata: Metadata = {
   title: "Contact",
@@ -7,141 +10,180 @@ export const metadata: Metadata = {
     "Book a demo and see how Ordina works for your team in a 30-minute walkthrough.",
 };
 
+const TEAM_SIZES = ["Just me", "2–10 people", "11–50 people", "51–200 people", "200+ people"];
+const ROLES = [
+  "Operations & Workflow",
+  "Product & Engineering",
+  "Strategy & Leadership",
+  "Marketing & Growth",
+  "Finance & Admin",
+  "Other",
+];
+
+const inputClass =
+  "mt-2 w-full rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm text-white outline-none transition placeholder:text-white/35 focus:border-white/30";
+
 export default function ContactPage() {
   return (
-    <>
-      <PageHero
-        eyebrow="24h response time"
-        title="Book a demo"
-        description="See how Ordina works for your team in a 30-minute walkthrough. No pitch, no pressure — just a clear look at whether it's the right fit."
-      />
+    <div className="text-[var(--ordina-text)]">
+      {/* Hero with integrated form */}
+      <section className="relative overflow-hidden bg-[var(--ordina-navy-deep)] py-16 text-white md:py-24">
+        <div className="mx-auto grid max-w-6xl items-start gap-12 px-6 lg:grid-cols-[1fr_1.05fr]">
+          {/* Left column */}
+          <div>
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/12 bg-white/[0.06] px-3 py-1 text-xs text-white/80">
+              <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <circle cx="12" cy="12" r="9" />
+                <path d="M12 7v5l3 2" />
+              </svg>
+              24h response time
+            </span>
+            <h1 className="mt-6 text-[2.75rem] font-medium leading-[1.05] tracking-[-0.03em] md:text-[3.5rem]">
+              Book a demo
+            </h1>
+            <p className="mt-5 max-w-md text-base leading-relaxed text-white/60">
+              See how Ordina works for your team in a 30-minute walkthrough. No
+              pitch, no pressure — just a clear look at whether it&apos;s the right fit.
+            </p>
+            <div className="mt-6 flex flex-wrap items-center gap-6 text-sm text-white/55">
+              <span className="inline-flex items-center gap-2">
+                <svg className="h-4 w-4 opacity-80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
+                  <rect x="2" y="5" width="20" height="14" rx="2" />
+                  <path d="M2 10h20" />
+                </svg>
+                No credit card
+              </span>
+              <span className="inline-flex items-center gap-2">
+                <svg className="h-4 w-4 opacity-80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="M12 7v5l3 2" />
+                </svg>
+                15 day free trial
+              </span>
+            </div>
+            <div className="mt-12 grid max-w-md grid-cols-3 gap-x-6 gap-y-8">
+              {HOME_HERO_LOGOS.slice(0, 6).map((key) => (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  key={key}
+                  src={HOME_ASSETS[key]}
+                  alt=""
+                  className="h-6 w-auto self-center opacity-70"
+                />
+              ))}
+            </div>
+          </div>
 
-      <section className="py-16">
-        <div className="mx-auto grid max-w-6xl gap-12 px-6 lg:grid-cols-2">
-          <form className="rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm">
+          {/* Form card */}
+          <form action="/contact" className="rounded-3xl bg-white/[0.04] p-6 ring-1 ring-white/10 md:p-8">
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="block text-sm">
-                <span className="font-medium text-zinc-900">First name *</span>
-                <input
-                  type="text"
-                  name="firstName"
-                  required
-                  className="mt-1.5 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none ring-indigo-500 focus:ring-2"
-                />
+                <span className="text-white/80">First name*</span>
+                <input type="text" name="firstName" required placeholder="John" className={inputClass} />
               </label>
               <label className="block text-sm">
-                <span className="font-medium text-zinc-900">Last name *</span>
-                <input
-                  type="text"
-                  name="lastName"
-                  required
-                  className="mt-1.5 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none ring-indigo-500 focus:ring-2"
-                />
+                <span className="text-white/80">Last name*</span>
+                <input type="text" name="lastName" required placeholder="Meyer" className={inputClass} />
               </label>
             </div>
-
             <label className="mt-4 block text-sm">
-              <span className="font-medium text-zinc-900">Work email *</span>
-              <input
-                type="email"
-                name="email"
-                required
-                className="mt-1.5 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none ring-indigo-500 focus:ring-2"
-              />
+              <span className="text-white/80">Work email*</span>
+              <input type="email" name="email" required placeholder="john.meyer@hubspot.com" className={inputClass} />
             </label>
-
             <label className="mt-4 block text-sm">
-              <span className="font-medium text-zinc-900">Your company name *</span>
-              <input
-                type="text"
-                name="company"
-                required
-                className="mt-1.5 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none ring-indigo-500 focus:ring-2"
-              />
+              <span className="text-white/80">Your company name*</span>
+              <input type="text" name="company" required placeholder="E.g.: Hubspot" className={inputClass} />
             </label>
-
             <label className="mt-4 block text-sm">
-              <span className="font-medium text-zinc-900">Team size</span>
-              <select
-                name="teamSize"
-                className="mt-1.5 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none ring-indigo-500 focus:ring-2"
-              >
-                <option value="">Select…</option>
-                <option>Just me</option>
-                <option>2–10 people</option>
-                <option>11–50 people</option>
-                <option>51–200 people</option>
-                <option>200+ people</option>
+              <span className="text-white/80">Team size</span>
+              <select name="teamSize" defaultValue="" className={inputClass}>
+                <option value="" disabled>Select…</option>
+                {TEAM_SIZES.map((t) => (
+                  <option key={t} className="text-black">{t}</option>
+                ))}
               </select>
             </label>
-
             <label className="mt-4 block text-sm">
-              <span className="font-medium text-zinc-900">
-                What best describes your role? *
-              </span>
-              <select
-                name="role"
-                required
-                className="mt-1.5 w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none ring-indigo-500 focus:ring-2"
-              >
-                <option value="">Select…</option>
-                <option>Operations & Workflow</option>
-                <option>Product & Engineering</option>
-                <option>Strategy & Leadership</option>
-                <option>Marketing & Growth</option>
-                <option>Finance & Admin</option>
-                <option>Other</option>
+              <span className="text-white/80">What best describes your role? *</span>
+              <select name="role" required defaultValue="" className={inputClass}>
+                <option value="" disabled>Select…</option>
+                {ROLES.map((r) => (
+                  <option key={r} className="text-black">{r}</option>
+                ))}
               </select>
             </label>
-
-            <label className="mt-4 flex items-start gap-2 text-sm text-zinc-600">
-              <input type="checkbox" name="updates" className="mt-1" />
+            <label className="mt-5 flex items-start gap-2.5 text-xs leading-relaxed text-white/55">
+              <input type="checkbox" name="updates" className="mt-0.5 h-3.5 w-3.5 rounded-[3px]" />
               <span>
-                Yes, I&apos;d like to receive product updates and insights from
-                Ordina. Unsubscribe anytime.
+                Yes, I&apos;d like to receive product updates and insights from Ordina.
+                Unsubscribe anytime.
               </span>
             </label>
-
             <button
               type="submit"
-              className="mt-6 w-full rounded-full bg-zinc-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-zinc-700"
+              className="mt-6 w-full rounded-full bg-[var(--ordina-lime)] px-5 py-3 text-sm font-medium text-black transition hover:opacity-90"
             >
               Send an inquiry
             </button>
-
-            <p className="mt-4 text-xs text-zinc-500">
-              By submitting, you agree to our Terms of Service and Privacy Policy.
-            </p>
-            <p className="mt-2 text-xs text-zinc-500">
-              No credit card · 15 day free trial
+            <p className="mt-4 text-center text-xs text-white/45">
+              By submitting, you agree to our{" "}
+              <Link href="/legal/terms-of-service" className="underline">Terms of Service</Link>{" "}
+              and <Link href="/legal/privacy-policy" className="underline">Privacy Policy</Link>.
             </p>
           </form>
+        </div>
+      </section>
 
-          <div className="space-y-6">
-            <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-6">
-              <h2 className="font-semibold text-zinc-900">Prefer a different way to connect?</h2>
-              <div className="mt-4 space-y-4 text-sm">
-                <div>
-                  <p className="font-medium text-zinc-900">Email us directly</p>
-                  <p className="text-zinc-600">For questions, partnerships, or anything else</p>
+      {/* Prefer a different way to connect */}
+      <section className="bg-white py-16 md:py-24">
+        <div className="mx-auto max-w-5xl px-6">
+          <h2 className="text-center text-3xl font-medium tracking-[-0.02em] md:text-4xl">
+            Prefer a different way to connect?
+          </h2>
+          <div className="mt-10 grid gap-4 md:grid-cols-3">
+            <div className="rounded-2xl bg-[var(--ordina-surface)] p-6">
+              <p className="font-medium text-[var(--ordina-text)]">Email us directly</p>
+              <p className="mt-1.5 text-sm text-[var(--ordina-muted)]">
+                For questions, partnerships, or anything else
+              </p>
+              <a href="mailto:support@ordina.com" className="mt-3 inline-block text-sm font-medium text-[var(--ordina-accent)] hover:opacity-70">
+                support@ordina.com
+              </a>
+            </div>
+            <div className="rounded-2xl bg-[var(--ordina-surface)] p-6">
+              <p className="font-medium text-[var(--ordina-text)]">Live chat</p>
+              <p className="mt-1.5 text-sm text-[var(--ordina-muted)]">
+                Talk to the team in real time during business hours
+              </p>
+              <a href="https://whatsapp.com/ordina" target="_blank" rel="noopener noreferrer" className="mt-3 inline-block text-sm font-medium text-[var(--ordina-accent)] hover:opacity-70">
+                whatsapp.com/ordina
+              </a>
+            </div>
+            <div className="rounded-2xl bg-[var(--ordina-surface)] p-6">
+              <p className="font-medium text-[var(--ordina-text)]">Follow along</p>
+              <p className="mt-1.5 text-sm text-[var(--ordina-muted)]">
+                Product updates, tips, and behind the scenes
+              </p>
+              <div className="mt-3 flex items-center gap-4 text-[var(--ordina-navy-deep)]">
+                {SITE_FOOTER.socialLinks.map((link) => (
                   <a
-                    href="mailto:support@ordina.com"
-                    className="mt-1 inline-block text-indigo-600 hover:text-indigo-700"
+                    key={link.href}
+                    href={link.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={link.label}
+                    className="hover:opacity-70"
                   >
-                    support@ordina.com
+                    <SocialIcon label={link.label} />
                   </a>
-                </div>
-                <div>
-                  <p className="font-medium text-zinc-900">Live chat</p>
-                  <p className="text-zinc-600">
-                    Talk to the team in real time during business hours
-                  </p>
-                </div>
+                ))}
               </div>
             </div>
           </div>
         </div>
       </section>
-    </>
+
+      <FaqSection />
+    </div>
   );
 }

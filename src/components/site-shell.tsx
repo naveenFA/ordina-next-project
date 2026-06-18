@@ -1,38 +1,43 @@
 import Image from "next/image";
 import Link from "next/link";
 import { SITE_FOOTER, SITE_HEADER } from "@/data/homepage";
+import { CtaSection } from "@/components/sections/cta-section";
+import { MobileNav } from "@/components/mobile-nav";
 
 export function Header() {
   return (
-    <header className="top-0 z-50 border-b border-white/10 bg-[var(--ordina-navy-deep)]">
-      <div className="mx-auto grid max-w-6xl grid-cols-[1fr_auto_1fr] items-center gap-4 px-6 py-4">
-        <Link href="/" className="flex items-center gap-2.5 justify-self-start">
-          <Image
-            src="/assets/ordina-logo.svg"
-            alt=""
-            width={20}
-            height={20}
-            aria-hidden
-          />
-          <span className="text-lg font-medium tracking-[-0.01em] text-white">
-            Ordina
-          </span>
-        </Link>
-        <nav className="hidden items-center gap-8 md:flex">
-          {SITE_HEADER.links.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="text-sm text-white/75 transition hover:text-white"
-            >
-              {link.label}
-            </Link>
-          ))}
-        </nav>
-        <div className="flex items-center justify-self-end gap-5">
+    <header className="sticky top-0 z-50 border-b border-white/10 bg-[var(--ordina-navy-deep)]">
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-8 px-5 py-4 sm:px-6 md:py-[22px]">
+        <div className="flex items-center gap-6 lg:gap-10">
+          <Link href="/" className="flex items-center gap-2.5">
+            <Image
+              src="/assets/ordina-logo.svg"
+              alt=""
+              width={28}
+              height={28}
+              className="h-7 w-7"
+              aria-hidden
+            />
+            <span className="text-xl font-medium tracking-[-0.01em] text-white">
+              Ordina
+            </span>
+          </Link>
+          <nav className="hidden items-center gap-6 md:flex lg:gap-8">
+            {SITE_HEADER.links.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="text-sm text-white/75 transition hover:text-white"
+              >
+                {link.label}
+              </Link>
+            ))}
+          </nav>
+        </div>
+        <div className="hidden items-center gap-5 md:flex">
           <Link
             href="/contact"
-            className="hidden text-sm text-white/75 hover:text-white sm:inline-block"
+            className="text-sm text-white/75 transition hover:text-white"
           >
             {SITE_HEADER.login}
           </Link>
@@ -43,12 +48,13 @@ export function Header() {
             {SITE_HEADER.cta}
           </Link>
         </div>
+        <MobileNav links={SITE_HEADER.links} login={SITE_HEADER.login} cta={SITE_HEADER.cta} />
       </div>
     </header>
   );
 }
 
-function SocialIcon({ label }: { label: string }) {
+export function SocialIcon({ label }: { label: string }) {
   const paths: Record<string, string> = {
     X: "M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z",
     LinkedIn:
@@ -200,6 +206,7 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
     <>
       <Header />
       <main className="flex-1">{children}</main>
+      <CtaSection />
       <Footer />
     </>
   );
