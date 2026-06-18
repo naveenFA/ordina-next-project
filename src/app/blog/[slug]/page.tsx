@@ -1,74 +1,119 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Prose } from "@/components/ui";
-import {
-  getAllBlogSlugs,
-  getBlogPost,
-  textToParagraphs,
-} from "@/lib/content";
+import { HOME_ASSETS } from "@/data/homepage";
+import { BlogPostContent } from "@/components/blog/blog-post-content";
+import { getBlogDetail, getBlogSlugs, getBlogs } from "@/lib/cms";
 
 type Props = {
   params: Promise<{ slug: string }>;
 };
 
 export async function generateStaticParams() {
-  return getAllBlogSlugs().map((slug) => ({ slug }));
+  return (await getBlogSlugs()).map((slug) => ({ slug }));
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
-  const post = getBlogPost(slug);
+  const post = await getBlogDetail(slug);
   if (!post) return { title: "Post not found" };
-
-  return {
-    title: post.title,
-    description: post.excerpt,
-  };
+  return { title: post.title, description: post.lede };
 }
 
 export default async function BlogPostPage({ params }: Props) {
   const { slug } = await params;
-  const post = getBlogPost(slug);
+  const post = await getBlogDetail(slug);
   if (!post) notFound();
 
-  const paragraphs = textToParagraphs(post.page.cleaned_text).filter(
-    (p) => !p.startsWith(post.title),
-  );
+  const { feed } = await getBlogs();
+  const relatedPosts = feed.filter((item) => item.slug !== slug).slice(0, 3);
+
+  const coverImage = post.cover || HOME_ASSETS.blogFeatured;
+  const textLength = (
+    post.introHtml + post.sections.map((s) => s.html).join("")
+  ).replace(/<[^>]+>/g, "").length;
+  const isCompactPost = textLength < 2200;
 
   return (
-    <article>
-      <header className="border-b border-zinc-200 bg-zinc-50">
-        <div className="mx-auto max-w-3xl px-6 py-16 md:py-20">
-          <Link
-            href="/blog"
-            className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
-          >
-            ← Back to blog
+    <article className="text-[var(--ordina-text)]">
+      <header className="bg-[var(--ordina-navy-deep)] pb-12 pt-12 text-white md:pb-14 md:pt-16">
+        <div className="mx-auto max-w-6xl px-6">
+          <Link href="/blog" className="text-xs text-white/70 hover:text-white">
+            Back to Blog
           </Link>
-          <div className="mt-6 flex flex-wrap items-center gap-2 text-sm text-zinc-500">
-            {post.category ? <span>{post.category}</span> : null}
-            {post.date ? <span>· {post.date}</span> : null}
-            {post.readTime ? <span>· {post.readTime}</span> : null}
+          <div className="mt-6 flex flex-wrap items-center justify-between gap-3 text-xs text-white/65">
+            <span className="inline-flex rounded-full border border-white/15 bg-white/5 px-3 py-1">
+              {post.category ?? "Blog"}
+            </span>
+            <span className="inline-flex items-center gap-3">
+              {post.date ? <span>{post.date}</span> : null}
+            </span>
           </div>
-          <h1 className="mt-4 text-3xl font-semibold tracking-tight text-zinc-900 md:text-4xl">
+          <h1 className="mt-5 max-w-3xl text-[2.25rem] font-normal leading-[1.05] tracking-[-0.025em] md:text-[4rem]">
             {post.title}
           </h1>
-          {post.excerpt ? (
-            <p className="mt-4 text-lg text-zinc-600">{post.excerpt}</p>
-          ) : null}
+          <p className="mt-4 max-w-3xl text-base leading-relaxed text-white/72 md:text-lg">
+            {post.lede}
+          </p>
+          <div className="mt-5 flex flex-wrap items-center gap-4 text-xs text-white/65">
+            {post.date ? <span>{post.date}</span> : null}
+          </div>
+          <div className="relative mt-8 overflow-hidden rounded-xl">
+            <div className="relative aspect-[2400/1300] w-full">
+              <Image
+                src={coverImage}
+                alt=""
+                fill
+                sizes="(max-width: 1200px) 100vw, 1152px"
+                className="object-cover"
+                unoptimized
+              />
+            </div>
+          </div>
         </div>
       </header>
 
-      <Prose>
-        <div className="mx-auto max-w-3xl px-6 py-12">
-          {paragraphs.map((paragraph) => (
-            <p key={paragraph.slice(0, 48)} className="mb-5 leading-relaxed text-zinc-700">
-              {paragraph}
-            </p>
-          ))}
+      <BlogPostContent
+        introHtml={post.introHtml}
+        sections={post.sections}
+        isCompactPost={isCompactPost}
+      />
+
+      <section className="bg-white pb-72 pt-14">
+        <div className="mx-auto max-w-6xl px-6">
+          <h2 className="text-[32px] font-normal leading-[1.15] tracking-[-0.02em] text-[var(--ordina-text)] md:text-[48px]">
+            Keep reading — there&apos;s more worth your time
+          </h2>
+          <div className="mt-8 grid gap-6 md:grid-cols-3">
+            {relatedPosts.map((item) => (
+              <article
+                key={item.slug}
+                className="rounded-xl border border-[var(--ordina-border)] p-5"
+              >
+                <div className="text-xs text-[var(--ordina-muted)]">
+                  {[item.category, item.date, item.readTime].filter(Boolean).join(" · ")}
+                </div>
+                <h3 className="mt-3 text-lg font-medium leading-snug text-[var(--ordina-text)]">
+                  <Link href={`/blog/${item.slug}`} className="hover:underline">
+                    {item.title}
+                  </Link>
+                </h3>
+                <p className="mt-3 text-sm leading-relaxed text-[var(--ordina-muted)]">
+                  {item.excerpt}
+                </p>
+                <Link
+                  href={`/blog/${item.slug}`}
+                  className="mt-4 inline-flex items-center gap-1 text-sm underline underline-offset-4"
+                >
+                  Read more
+                  <span aria-hidden>›</span>
+                </Link>
+              </article>
+            ))}
+          </div>
         </div>
-      </Prose>
+      </section>
     </article>
   );
 }
