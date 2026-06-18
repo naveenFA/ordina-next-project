@@ -7,6 +7,20 @@ type LegalSection = {
   paragraphs: string[];
 };
 
+type CmsPageAttributes = {
+  Tittle?: string;
+  Description?: string;
+  slug?: string;
+  updatedAt?: string;
+};
+
+type CmsPageResponse = {
+  data?: Array<{
+    id: number;
+    attributes?: CmsPageAttributes;
+  }>;
+};
+
 function slugify(text: string) {
   return text
     .toLowerCase()
@@ -118,19 +132,138 @@ function parseLegalContent(cleanedText: string, fallbackDate: string) {
   return { lastUpdated, introParagraphs, sections };
 }
 
-export function LegalDocumentPage({
+function decodeHtmlEntities(value: string) {
+  const namedEntities: Record<string, string> = {
+    nbsp: " ",
+    amp: "&",
+    lt: "<",
+    gt: ">",
+    quot: '"',
+    apos: "'",
+  };
+
+  return value.replace(/&(#x?[0-9a-fA-F]+|[a-zA-Z]+);/g, (entity, token: string) => {
+    if (token[0] === "#") {
+      const isHex = token[1]?.toLowerCase() === "x";
+      const raw = isHex ? token.slice(2) : token.slice(1);
+      const codePoint = Number.parseInt(raw, isHex ? 16 : 10);
+      if (Number.isNaN(codePoint)) return entity;
+      return String.fromCodePoint(codePoint);
+    }
+    return namedEntities[token] ?? entity;
+  });
+}
+
+function htmlParagraphsToText(description: string) {
+  const paragraphMatches = [...description.matchAll(/<p[^>]*>([\s\S]*?)<\/p>/gi)].map(
+    (match) => match[1] ?? "",
+  );
+  const rawParagraphs = paragraphMatches.length > 0 ? paragraphMatches : [description];
+
+  return rawParagraphs
+    .map((paragraph) =>
+      paragraph
+        .replace(/<br\s*\/?>/gi, "\n")
+        .replace(/<a\b[^>]*>([\s\S]*?)<\/a>/gi, "$1")
+        .replace(/<\/?strong\b[^>]*>/gi, "")
+        .replace(/<\/?em\b[^>]*>/gi, "")
+        .replace(/<[^>]+>/g, ""),
+    )
+    .map((paragraph) => decodeHtmlEntities(paragraph))
+    .map((paragraph) =>
+      paragraph
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .join(" "),
+    )
+    .map((paragraph) => paragraph.trim())
+    .filter(Boolean);
+}
+
+function parseCmsDescription(description: string, fallbackDate: string) {
+  const paragraphs = htmlParagraphsToText(description);
+  const introParagraphs: string[] = [];
+  const sections: LegalSection[] = [];
+  let current: LegalSection | null = null;
+  let lastUpdated = fallbackDate;
+
+  for (const paragraph of paragraphs) {
+    const updatedMatch = paragraph.match(/^Last updated:\s*(.+)$/i);
+    if (updatedMatch?.[1]) {
+      lastUpdated = updatedMatch[1].trim();
+      continue;
+    }
+
+    if (/^\d+\.\s+/.test(paragraph)) {
+      const section: LegalSection = {
+        id: slugify(paragraph),
+        heading: paragraph,
+        paragraphs: [],
+      };
+      sections.push(section);
+      current = section;
+      continue;
+    }
+
+    if (!current) {
+      introParagraphs.push(paragraph);
+      continue;
+    }
+    current.paragraphs.push(paragraph);
+  }
+
+  return {
+    lastUpdated,
+    introParagraphs,
+    sections,
+  };
+}
+
+async function fetchCmsPageBySlug(slug: string): Promise<CmsPageAttributes | null> {
+  const endpoint = `https://cms.flowautomate.io/api/pages?filters[slug][$eq]=${encodeURIComponent(slug)}`;
+
+  try {
+    const response = await fetch(endpoint, {
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+    });
+    if (!response.ok) return null;
+    const payload = (await response.json()) as CmsPageResponse;
+    return payload.data?.[0]?.attributes ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function formatIsoDate(isoDate: string | undefined) {
+  if (!isoDate) return null;
+  const date = new Date(isoDate);
+  if (Number.isNaN(date.getTime())) return null;
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(date);
+}
+
+export async function LegalDocumentPage({
   path,
   fallbackTitle,
 }: {
   path: string;
   fallbackTitle: string;
 }) {
-  const page = getPage(path);
-  const title = page?.headings.h1?.[0] ?? fallbackTitle;
-  const { lastUpdated, introParagraphs, sections } = parseLegalContent(
-    page?.cleaned_text ?? "",
-    "Mar 20, 2026",
-  );
+  const slug = path.replace(/^\/legal\//, "");
+  const cmsPage = await fetchCmsPageBySlug(slug);
+  const fallbackPage = getPage(path);
+  const fallbackParsed = parseLegalContent(fallbackPage?.cleaned_text ?? "", "Mar 20, 2026");
+  const cmsUpdatedDate = formatIsoDate(cmsPage?.updatedAt) ?? fallbackParsed.lastUpdated;
+
+  const title = cmsPage?.Tittle?.trim() || fallbackPage?.headings.h1?.[0] || fallbackTitle;
+  const parsed = cmsPage?.Description
+    ? parseCmsDescription(cmsPage.Description, cmsUpdatedDate)
+    : fallbackParsed;
 
   return (
     <article className="text-[var(--ordina-text)]">
@@ -145,9 +278,9 @@ export function LegalDocumentPage({
         </div>
       </header>
       <LegalDocumentContent
-        lastUpdated={lastUpdated}
-        introParagraphs={introParagraphs}
-        sections={sections}
+        lastUpdated={parsed.lastUpdated}
+        introParagraphs={parsed.introParagraphs}
+        sections={parsed.sections}
       />
     </article>
   );
