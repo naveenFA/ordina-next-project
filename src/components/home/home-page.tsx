@@ -7,18 +7,19 @@ import {
   HOME_ASSETS,
   HOME_BLOG,
   HOME_BRIDGE,
-  HOME_CTA,
-  HOME_FAQ,
   HOME_FEATURES,
   HOME_HERO,
-  HOME_HERO_LOGOS,
   HOME_IMPACT,
   HOME_INTEGRATIONS,
   HOME_PAIN_POINTS,
-  HOME_TESTIMONIALS,
   HOME_UNLOCK,
   HOME_WORKFLOW,
 } from "@/data/homepage";
+import { useInView } from "@/lib/use-in-view";
+import { HeroLogoTicker } from "@/components/sections/hero-logo-ticker";
+import { TestimonialsSection } from "@/components/sections/testimonials-section";
+import { FaqSection } from "@/components/sections/faq-section";
+import { BlogFeaturedCard, BlogPostCard } from "@/components/blog/blog-cards";
 
 function asset(key: keyof typeof HOME_ASSETS) {
   return HOME_ASSETS[key];
@@ -109,9 +110,18 @@ const BRIDGE_SLOTS = [
 function bridgeWidgetStyle(
   index: number,
   widget: (typeof HOME_BRIDGE.slides)[number]["widgets"][number],
+  scale: number,
 ): CSSProperties {
   const slot = BRIDGE_SLOTS[index] ?? BRIDGE_SLOTS[0];
-  return { width: widget.width, left: slot.left, top: slot.top };
+  return { width: widget.width * scale, left: slot.left, top: slot.top };
+}
+
+/** Widgets are full-size on desktop and scaled down so they still frame the headline on smaller screens. */
+function bridgeWidgetScale(width: number): number {
+  if (width >= 1024) return 1;
+  if (width >= 768) return 0.64;
+  if (width >= 640) return 0.52;
+  return 0.42;
 }
 
 const BRIDGE_PARALLAX = [0.45, -0.38, 0.42, -0.32, 0.28];
@@ -225,6 +235,14 @@ function BridgeSection() {
   );
   const headlineY = bridgeHeadlineTranslateY(progress, segmentProgress);
 
+  const [widgetScale, setWidgetScale] = useState(1);
+  useEffect(() => {
+    const compute = () => setWidgetScale(bridgeWidgetScale(window.innerWidth));
+    compute();
+    window.addEventListener("resize", compute);
+    return () => window.removeEventListener("resize", compute);
+  }, []);
+
   return (
     <section
       ref={containerRef}
@@ -233,7 +251,7 @@ function BridgeSection() {
     >
       <div className="sticky top-0 z-[1] flex h-[100svh] items-center justify-center overflow-hidden lg:h-screen">
         <div className="bridge-dot-grid pointer-events-none absolute inset-0 z-0" aria-hidden />
-        <div className="pointer-events-none absolute inset-0 z-0 hidden lg:block" aria-hidden>
+        <div className="pointer-events-none absolute inset-0 z-0 block" aria-hidden>
           {HOME_BRIDGE.slides.map((slide, slideIdx) => {
             const isActive = slideIdx === slideIndex && slideIndex >= 0;
             return (
@@ -254,8 +272,8 @@ function BridgeSection() {
                       key={widget.key}
                       className="absolute will-change-transform transition-opacity duration-700 ease-out"
                       style={{
-                        ...bridgeWidgetStyle(index, widget),
-                        transform: `translate(-50%, calc(-50% + ${translateY}px))`,
+                        ...bridgeWidgetStyle(index, widget, widgetScale),
+                        transform: `translate(-50%, calc(-50% + ${translateY * widgetScale}px))`,
                         opacity: isActive ? 1 : 0,
                       }}
                     >
@@ -273,47 +291,27 @@ function BridgeSection() {
             );
           })}
         </div>
-        <div className="relative z-10 mx-auto w-full max-w-[1200px] px-6 lg:px-10">
+        <div className="relative z-10 mx-auto w-full max-w-[1200px] px-5 sm:px-6 lg:px-10">
           <div
             className="flex items-center justify-center will-change-transform"
             style={{ transform: `translate3d(0, ${headlineY}px, 0)` }}
           >
-            <h2 className="max-w-[850px] text-center text-2xl font-medium leading-snug tracking-[-0.02em] will-change-transform md:text-4xl lg:text-[2.5rem]">
+            <h2 className="max-w-[850px] text-center text-xl font-medium leading-snug tracking-[-0.02em] will-change-transform sm:text-2xl md:text-4xl lg:text-[2.5rem]">
               <BridgeTitle activeSlideIndex={slideIndex} />
             </h2>
           </div>
         </div>
       </div>
-      {/* Framer statement steps: 70vh × 3 + 100vh filler while sticky stays pinned */}
-      <div ref={step1Ref} className="h-[55vh] lg:h-[70vh]" aria-hidden />
-      <div ref={step2Ref} className="h-[55vh] lg:h-[70vh]" aria-hidden />
-      <div ref={step3Ref} className="h-[55vh] lg:h-[70vh]" aria-hidden />
-      <div className="h-[80vh] lg:h-[100vh]" aria-hidden />
+      {/* Framer statement steps: 70vh × 3 + 100vh filler while sticky stays pinned (compressed on small screens where the widgets are hidden) */}
+      <div ref={step1Ref} className="h-[40vh] lg:h-[70vh]" aria-hidden />
+      <div ref={step2Ref} className="h-[40vh] lg:h-[70vh]" aria-hidden />
+      <div ref={step3Ref} className="h-[40vh] lg:h-[70vh]" aria-hidden />
+      <div className="h-[30vh] lg:h-[100vh]" aria-hidden />
     </section>
   );
 }
 
 const PAIN_CARD_EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
-
-function useInView<T extends HTMLElement = HTMLDivElement>(threshold = 0.4) {
-  const ref = useRef<T>(null);
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) setVisible(true);
-      },
-      { threshold },
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [threshold]);
-
-  return { ref, visible };
-}
 
 const FEATURE_CARD_SIZES: Record<string, { width: number; height: number }> = {
   featureWorkspaces: { width: 960, height: 768 },
@@ -356,9 +354,6 @@ function FeatureFloatingCard({
     </div>
   );
 }
-
-/** Fictional customer brands shown on the testimonial portraits (index-aligned with HOME_TESTIMONIALS.items) */
-const TESTIMONIAL_COMPANIES = ["Journey", "AIVA", "Alexun"] as const;
 
 /** Workflow carousel: per-step composite visuals (bg + overlay + widget) and auto-advance timing */
 const WORKFLOW_VISUALS = ["workflowPlan", "workflowExecute", "workflowOptimize"] as const;
@@ -417,69 +412,9 @@ function IntegrationTicker({
   );
 }
 
-function CompanyLogo({ index }: { index: number }) {
-  const name = TESTIMONIAL_COMPANIES[index] ?? "";
-  return (
-    <span className="inline-flex items-center gap-2 text-[18px] font-medium tracking-[-0.01em]">
-      <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden className="shrink-0">
-        {index === 0 ? (
-          // Journey — dot cluster
-          <g fill="currentColor">
-            <circle cx="6" cy="7" r="1.7" />
-            <circle cx="12" cy="7" r="1.7" />
-            <circle cx="18" cy="7" r="1.7" />
-            <circle cx="6" cy="13" r="1.7" />
-            <circle cx="12" cy="13" r="1.7" />
-            <circle cx="18" cy="13" r="1.7" />
-            <circle cx="9" cy="19" r="1.7" />
-            <circle cx="15" cy="19" r="1.7" />
-          </g>
-        ) : index === 1 ? (
-          // AIVA — rounded tricorn emblem with trident
-          <g fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinejoin="round" strokeLinecap="round">
-            <path d="M12 2.8 20.8 18.4a1.8 1.8 0 0 1-1.6 2.7H4.8a1.8 1.8 0 0 1-1.6-2.7Z" />
-            <path d="M12 8v8M12 11.4 8.6 8.4M12 11.4 15.4 8.4" />
-          </g>
-        ) : (
-          // Alexun — six-petal asterisk
-          <g stroke="currentColor" strokeWidth="3" strokeLinecap="round">
-            <path d="M12 3.5v17M4.65 7.75 19.35 16.25M19.35 7.75 4.65 16.25" />
-          </g>
-        )}
-      </svg>
-      {name}
-    </span>
-  );
-}
-
-function HeroLogoTicker() {
-  const logos = HOME_HERO_LOGOS.map((key: (typeof HOME_HERO_LOGOS)[number]) => asset(key));
-  const items = [...logos, ...logos];
-
-  return (
-    <div
-      className="relative mt-12 overflow-hidden"
-      style={{
-        maskImage:
-          "linear-gradient(90deg, transparent 8%, black 51%, transparent 93%)",
-        WebkitMaskImage:
-          "linear-gradient(90deg, transparent 8%, black 51%, transparent 93%)",
-      }}
-    >
-      <div className="hero-logo-ticker flex w-max items-center gap-12">
-        {items.map((src, i) => (
-          <img key={`${src}-${i}`} src={src} alt="" className="h-6 w-auto shrink-0" />
-        ))}
-      </div>
-    </div>
-  );
-}
-
 export function HomePageContent() {
-  const [testimonialIndex, setTestimonialIndex] = useState(1);
   const [workflowIndex, setWorkflowIndex] = useState(0);
   const { ref: workflowRef, visible: workflowVisible } = useInView(0.3);
-  const { ref: ctaRef, visible: ctaVisible } = useInView(0.35);
   const { ref: painIntroRef, visible: painIntroVisible } = useInView(0.4);
   const { ref: painCardsRef, visible: painCardsVisible } = useInView(0.4);
 
@@ -779,80 +714,7 @@ export function HomePageContent() {
         </div>
       </section>
 
-      <section className="border-y border-[var(--ordina-border)] bg-[var(--ordina-surface)] py-16 md:py-[122px]">
-        <div className="mx-auto max-w-6xl px-6">
-          <div className="text-center">
-            <span className="inline-flex items-center gap-2 rounded-full border border-[var(--ordina-border)] bg-white px-3 py-1 text-xs text-[var(--ordina-muted)]">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                <rect x="2.5" y="7" width="19" height="13.5" rx="2" />
-                <path d="M8 7V5.2A2.2 2.2 0 0 1 10.2 3h3.6A2.2 2.2 0 0 1 16 5.2V7" />
-              </svg>
-              {HOME_TESTIMONIALS.eyebrow}
-            </span>
-            <h2 className="mx-auto mt-4 max-w-[460px] text-balance bg-gradient-to-b from-[#141414] from-45% to-[#9aa0ab] bg-clip-text text-3xl font-medium tracking-[-0.02em] text-transparent md:text-4xl">
-              {HOME_TESTIMONIALS.title}
-            </h2>
-          </div>
-          <div className="mt-10 flex flex-col gap-4 md:flex-row">
-            {HOME_TESTIMONIALS.items.map((item, index) => {
-              const isActive = testimonialIndex === index;
-              return (
-                <button
-                  key={item.name}
-                  type="button"
-                  onClick={() => setTestimonialIndex(index)}
-                  style={{ flexGrow: isActive ? 2.2 : 1, flexBasis: 0 }}
-                  className={`relative overflow-hidden rounded-2xl text-left transition-[flex-grow] duration-[600ms] ease-[cubic-bezier(0.22,1,0.36,1)] md:h-[450px] ${
-                    isActive ? "bg-[#1a1a1a]" : "bg-[#e9e9ea]"
-                  }`}
-                >
-                  <div className="flex h-full flex-col md:flex-row">
-                    <div
-                      className={`relative min-h-[300px] md:min-h-0 ${
-                        isActive ? "md:w-[42%]" : "flex-1"
-                      }`}
-                    >
-                      <Image
-                        src={asset(item.portraitKey as keyof typeof HOME_ASSETS)}
-                        alt={item.name}
-                        fill
-                        sizes="(max-width: 768px) 100vw, 33vw"
-                        className="object-cover object-top"
-                      />
-                      {!isActive ? (
-                        <div className="pointer-events-none absolute inset-0 bg-white/25" />
-                      ) : null}
-                      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/55 to-transparent" />
-                      <div className="absolute bottom-5 left-5 text-white">
-                        <CompanyLogo index={index} />
-                      </div>
-                    </div>
-                    {isActive ? (
-                      <div className="flex flex-1 flex-col justify-between p-6 text-white md:p-8">
-                        <p
-                          className="text-lg leading-relaxed md:text-xl"
-                          style={{
-                            maskImage:
-                              "linear-gradient(to bottom, #000 72%, transparent 100%)",
-                            WebkitMaskImage:
-                              "linear-gradient(to bottom, #000 72%, transparent 100%)",
-                          }}
-                        >
-                          {item.quote}
-                        </p>
-                        <div className="mt-6">
-                          <p className="font-medium">{item.name}</p>
-                          <p className="text-sm text-white/60">{item.role}</p>
-                        </div>
-                      </div>
-                    ) : null}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </section>
+      <TestimonialsSection />
 
       <section ref={workflowRef} className="bg-white py-16 md:py-[150px]">
         <div className="mx-auto max-w-6xl px-6">
@@ -1017,214 +879,33 @@ export function HomePageContent() {
             {HOME_BLOG.title}
           </h2>
           <p className="mt-4 max-w-2xl text-lg text-white/70">{HOME_BLOG.description}</p>
-          <article className="relative mt-10 overflow-hidden rounded-3xl bg-[#0a3348]">
-            <div
-              aria-hidden
-              className="pointer-events-none absolute -right-28 -top-28 h-[460px] w-[460px] rounded-full border border-white/[0.05]"
-            />
-            <div
-              aria-hidden
-              className="pointer-events-none absolute -right-12 -top-12 h-[300px] w-[300px] rounded-full border border-white/[0.04]"
-            />
-            <div className="relative grid gap-6 p-4 md:grid-cols-2 md:p-5">
-              <div className="relative min-h-[280px] overflow-hidden rounded-2xl md:min-h-[460px]">
-                <Image
-                  src={asset(HOME_BLOG.featured.imageKey as keyof typeof HOME_ASSETS)}
-                  alt=""
-                  fill
-                  sizes="(max-width: 768px) 100vw, 50vw"
-                  className="object-cover"
-                />
-              </div>
-              <div className="flex flex-col justify-center p-4 md:p-8 lg:p-12">
-                <p className="text-xs uppercase tracking-[0.12em] text-[var(--ordina-accent-light)]">
-                  Featured Post
-                </p>
-                <h3 className="mt-4 text-3xl font-medium leading-[1.1] tracking-[-0.01em] md:text-4xl">
-                  <Link href={`/blog/${HOME_BLOG.featured.slug}`} className="hover:opacity-90">
-                    {HOME_BLOG.featured.title}
-                  </Link>
-                </h3>
-                <p className="mt-5 max-w-md text-sm leading-relaxed text-white/60">
-                  {HOME_BLOG.featured.excerpt}
-                </p>
-                <Link
-                  href={`/blog/${HOME_BLOG.featured.slug}`}
-                  className="mt-7 inline-flex items-center gap-1.5 text-sm font-medium text-white transition-opacity hover:opacity-80"
-                >
-                  Read more
-                  <span aria-hidden>›</span>
-                </Link>
-              </div>
-            </div>
-          </article>
+          <BlogFeaturedCard
+            slug={HOME_BLOG.featured.slug}
+            title={HOME_BLOG.featured.title}
+            excerpt={HOME_BLOG.featured.excerpt}
+            image={asset(HOME_BLOG.featured.imageKey as keyof typeof HOME_ASSETS)}
+          />
           <div className="mt-12 grid gap-6 md:mt-16 md:grid-cols-3">
             {HOME_BLOG.posts.map((post) => (
-              <article key={post.slug} className="group">
-                <div className="relative aspect-[4/3] overflow-hidden rounded-2xl">
-                  <Image
-                    src={asset(post.imageKey as keyof typeof HOME_ASSETS)}
-                    alt=""
-                    fill
-                    sizes="(max-width: 768px) 100vw, 33vw"
-                    className="object-cover grayscale transition group-hover:grayscale-0"
-                  />
-                  <span className="absolute left-3 top-3 rounded-md bg-[var(--ordina-navy-mid)] px-2.5 py-1 text-xs text-white">
-                    {post.category}
-                  </span>
-                </div>
-                <div className="mt-4 flex items-center gap-3 text-xs text-white/55">
-                  <span>{post.date}</span>
-                  <span aria-hidden>·</span>
-                  <span>{post.readTime}</span>
-                </div>
-                <h3 className="mt-2 text-lg font-medium leading-snug">
-                  <Link href={`/blog/${post.slug}`} className="hover:underline">
-                    {post.title}
-                  </Link>
-                </h3>
-                <p className="mt-2 line-clamp-2 text-sm text-white/65">{post.excerpt}</p>
-                <Link
-                  href={`/blog/${post.slug}`}
-                  className="mt-3 inline-flex items-center gap-1 text-sm underline underline-offset-4"
-                >
-                  Read more
-                  <span aria-hidden>›</span>
-                </Link>
-              </article>
+              <BlogPostCard
+                key={post.slug}
+                grayscale
+                post={{
+                  slug: post.slug,
+                  title: post.title,
+                  excerpt: post.excerpt,
+                  category: post.category,
+                  date: post.date,
+                  readTime: post.readTime,
+                  image: asset(post.imageKey as keyof typeof HOME_ASSETS),
+                }}
+              />
             ))}
           </div>
         </div>
       </section>
 
-      <section className="bg-white py-16 md:py-[170px]">
-        <div className="mx-auto max-w-6xl px-6">
-          <div className="grid gap-10 lg:grid-cols-[1fr_280px] lg:items-start">
-            <div>
-              <span className="inline-flex items-center gap-2 rounded-full border border-[var(--ordina-border)] bg-white px-3 py-1 text-xs text-[var(--ordina-muted)]">
-                {HOME_FAQ.eyebrow}
-              </span>
-              <h2 className="mt-4 text-3xl font-medium tracking-[-0.02em] md:text-4xl">
-                {HOME_FAQ.title}
-              </h2>
-              <div className="mt-10 divide-y divide-[var(--ordina-border)]">
-                {HOME_FAQ.items.map((item) => (
-                  <details key={item.q} className="group py-5">
-                    <summary className="cursor-pointer list-none font-medium marker:content-none">
-                      <span className="flex items-center justify-between gap-4">
-                        {item.q}
-                        <span className="shrink-0 text-xl font-light text-[var(--ordina-muted)] transition group-open:rotate-45">
-                          +
-                        </span>
-                      </span>
-                    </summary>
-                    <p className="mt-3 max-w-2xl text-sm leading-relaxed text-[var(--ordina-muted)]">
-                      {item.a}
-                    </p>
-                  </details>
-                ))}
-              </div>
-            </div>
-            <div className="lg:pt-12">
-              <p className="text-sm leading-relaxed text-[var(--ordina-muted)]">
-                {HOME_FAQ.description}
-              </p>
-              <Link
-                href="/contact"
-                className="mt-5 inline-flex rounded-[10px] bg-[var(--ordina-navy-mid)] px-5 py-2.5 text-sm font-medium text-white"
-              >
-                {HOME_FAQ.cta}
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="relative overflow-hidden bg-[var(--ordina-navy-deep)]">
-        <div className="pointer-events-none absolute inset-0 overflow-hidden">
-          {/* top-left curved blob */}
-          <div className="absolute left-[6%] -top-16 h-[300px] w-[320px] rounded-[0_0_170px_0] bg-white/[0.03]" />
-          {/* bottom-left rectangle */}
-          <div className="absolute left-[6%] top-[250px] h-[200px] w-[340px] rounded-[28px] bg-white/[0.028]" />
-          {/* center-right rectangle */}
-          <div className="absolute left-[64%] top-24 h-[210px] w-[290px] rounded-[28px] bg-white/[0.03]" />
-          {/* bottom-right curved blob */}
-          <div className="absolute -right-12 top-[230px] h-[380px] w-[380px] rounded-[190px_0_0_0] bg-white/[0.03]" />
-        </div>
-        <div
-          ref={ctaRef}
-          className="relative mx-auto max-w-4xl px-6 pb-24 pt-20 text-center text-white md:pb-[150px] md:pt-[140px]"
-        >
-          <h2
-            className="mx-auto max-w-[500px] text-3xl font-medium leading-[1.08] tracking-[-0.02em] text-white/88 transition-all duration-700 ease-out md:text-[54px]"
-            style={{
-              opacity: ctaVisible ? 1 : 0,
-              transform: ctaVisible ? "none" : "translateY(26px)",
-            }}
-          >
-            {HOME_CTA.title}
-          </h2>
-          <p
-            className="mx-auto mt-4 max-w-[620px] text-lg text-white/60 transition-all duration-700 ease-out"
-            style={{
-              opacity: ctaVisible ? 1 : 0,
-              transform: ctaVisible ? "none" : "translateY(26px)",
-              transitionDelay: ctaVisible ? "120ms" : "0ms",
-            }}
-          >
-            {HOME_CTA.description}
-          </p>
-          <Link
-            href="/contact"
-            className="mt-8 inline-flex items-center gap-2 rounded-full bg-[var(--ordina-lime)] px-5 py-2.5 text-sm font-medium text-black shadow-[0_0_0_1px_rgba(0,0,0,0.06)] transition-all duration-700 ease-out"
-            style={{
-              opacity: ctaVisible ? 1 : 0,
-              transform: ctaVisible ? "none" : "translateY(26px)",
-              transitionDelay: ctaVisible ? "230ms" : "0ms",
-            }}
-          >
-            {HOME_CTA.button}
-            <span aria-hidden>›</span>
-          </Link>
-          <div
-            className="mt-5 flex flex-wrap items-center justify-center gap-6 text-sm text-white/55 transition-all duration-700 ease-out"
-            style={{
-              opacity: ctaVisible ? 1 : 0,
-              transform: ctaVisible ? "none" : "translateY(26px)",
-              transitionDelay: ctaVisible ? "320ms" : "0ms",
-            }}
-          >
-            <span className="inline-flex items-center gap-2">
-              <svg
-                className="h-4 w-4 opacity-80"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                aria-hidden
-              >
-                <rect x="2" y="5" width="20" height="14" rx="2" />
-                <path d="M2 10h20" />
-              </svg>
-              {HOME_CTA.noteLine1}
-            </span>
-            <span className="inline-flex items-center gap-2">
-              <svg
-                className="h-4 w-4 opacity-80"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                aria-hidden
-              >
-                <circle cx="12" cy="12" r="9" />
-                <path d="M12 7v5l3 2" />
-              </svg>
-              {HOME_CTA.noteLine2}
-            </span>
-          </div>
-        </div>
-      </section>
+      <FaqSection />
     </div>
   );
 }

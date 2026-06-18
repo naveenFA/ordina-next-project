@@ -151,6 +151,7 @@ export const PRICING_PLANS = [
     price: 29,
     yearlyPrice: 23,
     description: "For small teams getting organised",
+    includedCount: 5,
     features: [
       "5 Team members",
       "3 Workspaces",
@@ -170,6 +171,7 @@ export const PRICING_PLANS = [
     yearlyPrice: 47,
     description: "For teams managing multiple projects",
     featured: true,
+    includedCount: 8,
     features: [
       "20 Team members",
       "10 Workspaces",
@@ -188,6 +190,7 @@ export const PRICING_PLANS = [
     price: 99,
     yearlyPrice: 79,
     description: "For organisations that need full control",
+    includedCount: 10,
     features: [
       "Unlimited team members",
       "Unlimited workspaces",
@@ -199,6 +202,70 @@ export const PRICING_PLANS = [
       "Guest access",
       "Advanced permissions",
       "Admin & audit logs",
+    ],
+  },
+] as const;
+
+export const PRICING_HERO = {
+  eyebrow: "Pricing",
+  title: "Flexible pricing plans",
+  description:
+    "Whether you're a small team finding your rhythm or a scaling organization managing complex workflows, there's a plan that fits.",
+} as const;
+
+/**
+ * Feature comparison matrix shown below the plan cards. Each row value is either
+ * a string (rendered as text) or a boolean (rendered as a check / dash). `sub`
+ * marks a row that's visually indented under the preceding parent row.
+ */
+type CompareValue = string | boolean;
+type CompareRow = {
+  label: string;
+  values: readonly [CompareValue, CompareValue, CompareValue];
+  sub?: boolean;
+};
+
+export const PRICING_COMPARE: readonly {
+  category: string;
+  rows: readonly CompareRow[];
+}[] = [
+  {
+    category: "Workspaces",
+    rows: [
+      { label: "Team members", values: ["Up to 5", "Up to 20", "Unlimited"] },
+      { label: "Workspaces", values: ["3", "10", "Unlimited"] },
+      { label: "Storage", values: ["5 GB", "25 GB", "100 GB"] },
+      { label: "Guest access", values: [false, true, true] },
+      { label: "Custom views & dashboards", values: [false, true, true] },
+      { label: "Docs & notes", values: [true, true, true] },
+    ],
+  },
+  {
+    category: "Workflows & Automations",
+    rows: [
+      { label: "Active workflows", values: ["5", "25", "Unlimited"] },
+      { label: "Workflow automations", values: [false, true, true] },
+      { label: "Integrations", values: ["3", "15", "Unlimited"] },
+      { label: "Slack & Email notifications", values: [false, true, true], sub: true },
+      { label: "Google Drive & calendar sync", values: [false, true, true], sub: true },
+      { label: "API Access", values: [false, false, true], sub: true },
+      { label: "Recurring tasks", values: [false, true, true] },
+      { label: "Reporting & analytics", values: [false, true, true] },
+      { label: "Expert reports", values: [false, true, true], sub: true },
+      { label: "Custom date ranges", values: [false, true, true], sub: true },
+      { label: "Cross-workspace reporting", values: [false, false, true], sub: true },
+      { label: "Automation history", values: [false, false, true] },
+    ],
+  },
+  {
+    category: "Security & Administration",
+    rows: [
+      { label: "Two-factor authentication", values: [true, true, true] },
+      { label: "Advanced permissions", values: [false, false, true] },
+      { label: "Admin & audit logs", values: [false, false, true] },
+      { label: "SSO & SAML", values: [false, false, true] },
+      { label: "Priority support", values: [false, false, true] },
+      { label: "Custom onboarding", values: [false, false, true] },
     ],
   },
 ] as const;
